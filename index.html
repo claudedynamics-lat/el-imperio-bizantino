@@ -117,7 +117,7 @@ add('<section class="slide">'+B('tr')+B('bl')+'<div class="mid"><h2 class="big">
 add('<section class="slide"><div class="mid"><h2 class="big">Bibliografía</h2><div class="bib"><div><div class="pill">Libro de texto</div><p>Contenidos de las págs. 21 a 25 sobre el Imperio bizantino</p></div><div><div class="pill">Video</div><p><a href="'+VIDEO+'" target="_blank" rel="noopener">Historia del Imperio Bizantino · Resumen</a> (YouTube)</p></div><div><div class="pill">Fuentes de consulta</div><p><a href="https://www.metmuseum.org/de/essays/byzantium-ca-330-1453" target="_blank" rel="noopener">The Met · Bizancio</a><br><a href="https://www.metmuseum.org/it/essays/the-byzantine-state-under-justinian-i-justinian-the-great" target="_blank" rel="noopener">The Met · Justiniano</a><br>Imágenes generadas con IA</p></div></div></div></section>');
 add('<section class="slide">'+B('tl')+B('br')+'<div class="mid"><div class="script">Muchas</div><h1>GRACIAS</h1><div class="pill">¿Preguntas o comentarios?</div></div></section>');
 var stage=document.getElementById('stage');stage.innerHTML=H.join('');
-var S=[].slice.call(stage.children),cur=0,max=0,shown=S.map(function(){return 0}),nb=document.getElementById('next');
+var S=[].slice.call(stage.children),cur=0,max=0,shown=S.map(function(el,i){return CNT[i]||0}),nb=document.getElementById('next');
 function render(){
   S.forEach(function(el,i){el.classList.toggle('cur',i==cur);[].slice.call(el.querySelectorAll('.idea')).forEach(function(li,j){li.classList.toggle('on',j<shown[i])})});
   var n=CNT[cur];
