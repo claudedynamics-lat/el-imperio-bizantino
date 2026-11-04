@@ -59,6 +59,7 @@ ul{list-style:none;margin:0;padding:0}
 .ctl button{font:700 17px Montserrat,system-ui,sans-serif;padding:10px 16px;border-radius:99px;border:2px solid var(--ctl);background:transparent;color:var(--ctl);cursor:pointer}
 .ctl button.main{background:var(--gold);border-color:var(--gold);color:#0a2340}
 .ctl button.on{background:var(--ctl);color:var(--page)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .big{font-size:6cqw;margin:0;font-weight:800}
 .cont{position:relative;z-index:2;padding:0 10cqw;width:100%}
 .grid{display:grid;grid-auto-flow:column;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,auto);gap:1.8cqw 4cqw;margin-top:3cqw}
@@ -84,6 +85,9 @@ ul{list-style:none;margin:0;padding:0}
   <button id="prev" aria-label="Anterior">◀</button>
   <button id="next" class="main"></button>
 </div>
+  <button id="fullscreen" type="button" aria-label="Pantalla completa (F)" aria-pressed="false">⛶ Pantalla completa</button>
+</div>
+<div id="fs-status" class="sr-only" aria-live="polite"></div>
 
 <script>
 (function(){
@@ -123,7 +127,12 @@ function render(){
 function next(){if(shown[cur]<CNT[cur])shown[cur]++;else if(cur<S.length-1){cur++;max=Math.max(max,cur)}render()}
 function prev(){if(cur>0)cur--;render()}
 function skip(){shown[cur]=CNT[cur];render()}
-function fs(){var e=document.documentElement;try{if(document.fullscreenElement)document.exitFullscreen();else{var p=e.requestFullscreen&&e.requestFullscreen();if(p&&p.catch)p.catch(function(){})}}catch(x){}}
+var fsb=document.getElementById("fullscreen"),fss=document.getElementById("fs-status");
+function syncFs(){var on=!!document.fullscreenElement;fsb.textContent=on?"⛶ Salir de pantalla completa":"⛶ Pantalla completa";fsb.setAttribute("aria-label",on?"Salir de pantalla completa":"Pantalla completa (F)");fsb.setAttribute("aria-pressed",String(on))}
+function fs(){var p;try{if(document.fullscreenElement){if(!document.exitFullscreen)throw new Error("Fullscreen API no disponible");p=document.exitFullscreen()}else if(document.documentElement.requestFullscreen){p=document.documentElement.requestFullscreen()}else{throw new Error("Fullscreen API no disponible")}fss.textContent="";if(p&&p.catch)p.catch(function(){fss.textContent="Pantalla completa no disponible. Usa F o el control del navegador."})}catch(x){fss.textContent="Pantalla completa no disponible. Usa F o el control del navegador."}}
+document.addEventListener("fullscreenchange",syncFs);
+fsb.addEventListener("click",fs);
+syncFs();
 nb.onclick=next;document.getElementById('prev').onclick=prev;
 stage.addEventListener('click',function(e){
   var d=e.target.closest('.d');if(d){var g=+d.dataset.go;if(g<=max){cur=g;render()}return}
