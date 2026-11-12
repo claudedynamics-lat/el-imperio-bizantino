@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#150a26">
+<title>Quiz del Imperio Bizantino</title>
+<style>
+:root{
+  --bg:#150a26; --gold:#e6b94d; --gold2:#f6dc8d; --text:#f6efe0; --muted:#c9bcd9;
+  --ok:#3ecf8e; --bad:#ff6b6b;
+  --serif:Georgia,"Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; min-height:100vh; min-height:100dvh; color:var(--text); font-family:var(--sans);
+  background:
+    radial-gradient(1000px 520px at 50% -10%, #4a1f7a 0%, transparent 62%),
+    radial-gradient(700px 480px at 100% 100%, #3a1458 0%, transparent 60%),
+    var(--bg);
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; opacity:.05;
+  background-image:conic-gradient(from 45deg at 50% 50%, var(--gold) 0 25%, transparent 0 50%, var(--gold) 0 75%, transparent 0);
+  background-size:44px 44px;
+}
+#app{position:relative; z-index:1; max-width:640px; margin:0 auto; padding:20px 16px 40px}
+.screen.enter{animation:fadeUp .5s ease backwards}
+#fx{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50}
+
+/* ---------- Inicio ---------- */
+.hero{text-align:center; padding-top:4vh}
+.emblem{animation:float 4s ease-in-out infinite; filter:drop-shadow(0 10px 24px rgba(230,185,77,.35))}
+h1{
+  font-family:var(--serif); font-size:clamp(1.9rem,8vw,2.8rem); line-height:1.1; margin:14px 0 8px;
+  color:var(--gold2);
+  background:linear-gradient(180deg,#fff3c4,#e6b94d 60%,#b98418);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.lead{color:var(--muted); font-size:1.05rem; line-height:1.5; margin:0 auto 20px; max-width:30em}
+.chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:26px}
+.chip{padding:8px 14px; border-radius:999px; border:1px solid rgba(230,185,77,.35); background:rgba(255,255,255,.05); font-size:.92rem}
+.record{margin-top:16px; color:var(--gold2); font-size:.95rem; min-height:1.3em}
+
+.btn{
+  font:inherit; font-weight:700; font-size:1.05rem; border:0; cursor:pointer; border-radius:999px;
+  padding:15px 28px; color:#2a1500; -webkit-tap-highlight-color:transparent;
+  background:linear-gradient(180deg,#f9e3a0,#e6b94d 55%,#c8951f);
+  box-shadow:0 8px 24px rgba(230,185,77,.3), inset 0 1px 0 rgba(255,255,255,.5);
+  transition:transform .15s, box-shadow .2s;
+}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:3px solid #fff; outline-offset:3px}
+@media (hover:hover){.btn:hover{transform:translateY(-2px); box-shadow:0 12px 30px rgba(230,185,77,.45), inset 0 1px 0 rgba(255,255,255,.5)}}
+.btn.wide{width:100%}
+
+/* ---------- HUD ---------- */
+.hud{margin-bottom:16px}
+.hud-top{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px}
+.stat-label{display:block; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.score-wrap{position:relative}
+.stat-value{font-family:var(--serif); font-size:1.7rem; font-weight:700; color:var(--gold2); display:inline-block}
+.stat-value.bump{animation:bump .4s}
+.plus{position:absolute; left:0; top:0; font-weight:800; color:var(--ok); font-size:1.2rem; animation:floatUp 1s ease-out forwards; pointer-events:none}
+.counter{font-size:.9rem; color:var(--muted); text-align:center}
+.streak{justify-self:end; display:flex; align-items:center; gap:6px; color:#7a6a92; font-family:var(--serif); font-size:1.5rem; font-weight:700}
+.streak svg{width:26px; height:26px; fill:currentColor; transition:color .3s}
+.streak.on{color:#ffa63d}
+.streak.hot{color:#ff7a2e; text-shadow:0 0 14px rgba(255,122,46,.7)}
+.streak.hot svg{animation:flame 1s ease-in-out infinite; filter:drop-shadow(0 0 6px rgba(255,122,46,.8))}
+.streak.bump{animation:bump .4s}
+.streak.lost{animation:shake .45s}
+.streak-label{font-family:var(--sans); font-size:.7rem; font-weight:600; color:var(--muted); display:block; line-height:1}
+.progress{display:flex; gap:6px; margin-top:12px}
+.seg{flex:1; height:8px; border:0; padding:0; border-radius:99px; background:rgba(255,255,255,.12); transition:background .3s, box-shadow .2s; position:relative; cursor:pointer; -webkit-tap-highlight-color:transparent}
+.seg::after{content:""; position:absolute; inset:-12px -2px}
+.seg.cur{box-shadow:0 0 0 2px rgba(246,220,141,.85)}
+.seg.cur:not(.ok):not(.bad){background:rgba(230,185,77,.6)}
+.seg:focus-visible{outline:2px solid #fff; outline-offset:3px}
+.seg.ok{background:var(--ok)}
+.seg.bad{background:var(--bad)}
+
+/* ---------- Tarjeta ---------- */
+.card{
+  padding:20px; border-radius:20px; border:1px solid rgba(230,185,77,.28);
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+  box-shadow:0 20px 50px rgba(0,0,0,.35);
+}
+#question{font-family:var(--serif); font-size:clamp(1.2rem,4.8vw,1.55rem); line-height:1.35; margin:0 0 18px; outline:none}
+.options{display:grid; gap:10px}
+.opt{
+  display:flex; align-items:center; gap:12px; width:100%; min-height:58px; padding:12px 14px; text-align:left;
+  font:inherit; font-size:1.02rem; color:inherit; cursor:pointer; border-radius:14px;
+  border:1.5px solid rgba(230,185,77,.28); background:rgba(255,255,255,.05);
+  transition:transform .15s, background .2s, border-color .2s, box-shadow .2s, opacity .3s;
+  animation:fadeUp .45s backwards; animation-delay:var(--d,0ms); -webkit-tap-highlight-color:transparent;
+}
+@media (hover:hover){.opt:hover{transform:translateY(-2px); border-color:var(--gold); background:rgba(230,185,77,.1)}}
+.opt:active{transform:scale(.98)}
+.opt:focus-visible{outline:3px solid var(--gold2); outline-offset:2px}
+.letter{
+  flex:none; width:34px; height:34px; border-radius:50%; display:grid; place-items:center;
+  font-weight:800; color:#2a1500; background:linear-gradient(180deg,#f9e3a0,#d9a935);
+}
+.otext{flex:1; line-height:1.3}
+.mark{flex:none; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-weight:800; opacity:0; transform:scale(.3); transition:opacity .25s, transform .3s}
+.options.locked .opt{pointer-events:none}
+.opt.correct{border-color:var(--ok); background:rgba(62,207,142,.16); box-shadow:0 0 0 3px rgba(62,207,142,.22),0 8px 30px rgba(62,207,142,.25); animation:pop .5s}
+.opt.reveal{border-color:var(--ok); background:rgba(62,207,142,.12); box-shadow:0 0 0 3px rgba(62,207,142,.18); animation:pop .5s .3s backwards}
+.opt.wrong{border-color:var(--bad); background:rgba(255,107,107,.14); animation:shake .45s}
+.opt.dim{opacity:.4; animation:none}
+.opt.correct .mark,.opt.reveal .mark{opacity:1; transform:none; background:var(--ok); color:#06281b}
+.opt.correct .mark::after,.opt.reveal .mark::after{content:"\2713"}
+.opt.wrong .mark{opacity:1; transform:none; background:var(--bad); color:#3a0a0a}
+.opt.wrong .mark::after{content:"\2715"}
+
+/* ---------- Feedback ---------- */
+.feedback{margin-top:18px; padding:16px; border-radius:14px; border:1.5px solid; animation:fadeUp .4s backwards}
+.feedback.still{animation:none}
+.options .opt.restored{animation:none !important}
+.hint{margin:-4px 0 16px; padding:12px 14px; border-radius:12px; border:1px dashed var(--gold); background:rgba(230,185,77,.1); color:var(--gold2); line-height:1.45; animation:fadeUp .35s backwards}
+.nav{display:grid; grid-template-columns:56px 1fr 56px; gap:10px; align-items:center; margin-top:16px}
+.navbtn,.hintbtn{
+  font:inherit; color:var(--gold2); cursor:pointer; -webkit-tap-highlight-color:transparent;
+  border:1.5px solid rgba(230,185,77,.4); background:rgba(255,255,255,.06);
+  transition:transform .15s, background .2s, opacity .2s, border-color .2s;
+}
+.navbtn{width:56px; height:56px; border-radius:50%; display:grid; place-items:center; padding:0}
+.navbtn svg{width:26px; height:26px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round}
+.hintbtn{height:56px; border-radius:999px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:1rem}
+.hintbtn svg{width:20px; height:20px; fill:currentColor}
+.navbtn:active,.hintbtn:active{transform:scale(.95)}
+.navbtn:disabled,.hintbtn:disabled{opacity:.3; cursor:default; transform:none}
+.navbtn:focus-visible,.hintbtn:focus-visible{outline:3px solid #fff; outline-offset:2px}
+@media (hover:hover){.navbtn:not(:disabled):hover,.hintbtn:not(:disabled):hover{background:rgba(230,185,77,.16); border-color:var(--gold)}}
+.feedback.good{background:rgba(62,207,142,.1); border-color:rgba(62,207,142,.55)}
+.feedback.bad{background:rgba(255,107,107,.08); border-color:rgba(255,107,107,.55)}
+.fb-title{font-family:var(--serif); font-size:1.2rem; font-weight:700; line-height:1.3; margin:0 0 8px}
+.good .fb-title{color:#7ff0b9}
+.bad .fb-title{color:#ff9f9f}
+.fb-streak{display:inline-block; margin-left:6px; padding:2px 10px; border-radius:999px; font-family:var(--sans); font-size:.8rem; background:rgba(255,166,61,.2); color:#ffb561; vertical-align:middle}
+.fb-answer{margin:0 0 8px; font-weight:600}
+.fb-text{margin:0 0 16px; line-height:1.55; color:#eadff5; font-size:1.02rem}
+
+/* ---------- Final ---------- */
+.end{text-align:center; padding-top:2vh}
+.ring{position:relative; width:170px; height:170px; margin:10px auto 14px}
+.ring svg{width:100%; height:100%; transform:rotate(-90deg)}
+.ring .bg{fill:none; stroke:rgba(255,255,255,.12); stroke-width:10}
+.ring .fg{fill:none; stroke:url(#goldGrad); stroke-width:10; stroke-linecap:round; stroke-dasharray:377; stroke-dashoffset:377; transition:stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1)}
+.ring .num{position:absolute; inset:0; display:grid; place-content:center; font-family:var(--serif); font-size:2.8rem; font-weight:700; color:var(--gold2); line-height:1}
+.ring .num small{font-size:.8rem; font-family:var(--sans); color:var(--muted); display:block; margin-top:4px}
+.rank{font-family:var(--serif); font-size:1.7rem; margin:6px 0; color:var(--gold2)}
+.rank-msg{color:var(--muted); line-height:1.5; max-width:28em; margin:0 auto 18px}
+.newrec{display:inline-block; margin-bottom:12px; padding:6px 14px; border-radius:999px; background:rgba(230,185,77,.18); border:1px solid var(--gold); color:var(--gold2); font-weight:700; animation:pop .6s}
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:0 0 22px}
+.stat-box{padding:12px 6px; border-radius:14px; background:rgba(255,255,255,.06); border:1px solid rgba(230,185,77,.25)}
+.stat-box b{display:block; font-family:var(--serif); font-size:1.5rem; color:var(--gold2)}
+.stat-box span{font-size:.78rem; color:var(--muted)}
+
+.finish{display:block; margin:18px auto 0; padding:12px 20px; font:inherit; font-weight:600; font-size:.98rem; color:var(--gold2); background:transparent; border:1.5px solid rgba(230,185,77,.4); border-radius:999px; cursor:pointer; transition:background .2s, border-color .2s, transform .15s; -webkit-tap-highlight-color:transparent}
+.finish:active{transform:scale(.97)}
+.finish.confirm{background:rgba(255,166,61,.16); border-color:#ffa63d; color:#ffcf8a}
+.finish:focus-visible{outline:3px solid #fff; outline-offset:2px}
+@media (hover:hover){.finish:hover{background:rgba(230,185,77,.14); border-color:var(--gold)}}
+
+/* ---------- Video ---------- */
+.video{margin-top:30px; padding-top:22px; border-top:1px solid rgba(230,185,77,.25); text-align:center}
+.video h3{font-family:var(--serif); font-size:1.35rem; margin:0 0 6px; color:var(--gold2)}
+.video-sub{margin:0 0 14px; color:var(--muted); line-height:1.45}
+.video-btn{display:block; width:100%; text-align:center; text-decoration:none}
+
+/* ---------- Efectos ---------- */
+.spark{position:absolute; width:9px; height:9px; border-radius:50%; margin:-4px 0 0 -4px; animation:burst .8s ease-out forwards}
+.confetti{position:absolute; top:-14px; width:10px; height:14px; border-radius:2px; animation:fall linear forwards}
+
+@keyframes fadeUp{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
+@keyframes pop{0%{transform:scale(.94)} 55%{transform:scale(1.04)} 100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(3px)}}
+@keyframes bump{0%{transform:scale(1)} 40%{transform:scale(1.3)} 100%{transform:scale(1)}}
+@keyframes float{0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)}}
+@keyframes flame{0%,100%{transform:scale(1) rotate(-3deg)} 50%{transform:scale(1.15) rotate(3deg)}}
+@keyframes floatUp{0%{opacity:0; transform:translateY(0)} 15%{opacity:1} 100%{opacity:0; transform:translateY(-44px)}}
+@keyframes burst{0%{opacity:1; transform:translate(0,0) scale(1)} 100%{opacity:0; transform:translate(var(--dx),var(--dy)) scale(.3)}}
+@keyframes fall{0%{opacity:1; transform:translate(0,0) rotate(0)} 100%{opacity:.9; transform:translate(var(--x),110vh) rotate(var(--r))}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; animation-delay:0ms !important}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:24px;text-align:center">Este quiz necesita JavaScript para funcionar. Actívalo y vuelve a cargar la página.</p></noscript>
+
+<main id="app">
+
+  <!-- INICIO -->
+  <section id="screen-start" class="screen enter">
+    <div class="hero">
+      <svg class="emblem" viewBox="0 0 120 90" width="132" height="99" aria-hidden="true">
+        <defs><linearGradient id="gd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f9e3a0"/><stop offset="1" stop-color="#c8951f"/></linearGradient></defs>
+        <path d="M60 4v16M53 11h14" stroke="url(#gd)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        <path d="M24 56a36 34 0 0 1 72 0z" fill="url(#gd)"/>
+        <rect x="20" y="56" width="80" height="30" rx="2" fill="url(#gd)"/>
+        <g fill="#3a1458">
+          <path d="M26 86V72a6 6 0 0 1 12 0v14z"/><path d="M46 86V72a6 6 0 0 1 12 0v14z"/>
+          <path d="M66 86V72a6 6 0 0 1 12 0v14z"/><path d="M86 86V72a6 6 0 0 1 12 0v14z"/>
+        </g>
+      </svg>
+      <h1>Imperio Bizantino</h1>
+      <p class="lead">Pon a prueba lo que sabes sobre Constantinopla y sus emperadores. Después de cada respuesta te explico el porqué, con palabras simples.</p>
+      <div class="chips">
+        <span class="chip">10 preguntas</span>
+        <span class="chip">10 puntos cada una</span>
+        <span class="chip">Rachas de aciertos</span>
+        <span class="chip">Sin tiempo límite</span>
+      </div>
+      <button id="btn-start" class="btn wide" type="button">Comenzar</button>
+      <div id="best-start" class="record"></div>
+    </div>
+  </section>
+
+  <!-- JUEGO -->
+  <section id="screen-quiz" class="screen" hidden>
+    <header class="hud">
+      <div class="hud-top">
+        <div>
+          <span class="stat-label">Puntos</span>
+          <div class="score-wrap" id="score-wrap"><span id="score" class="stat-value">0</span></div>
+        </div>
+        <div class="counter" id="counter">Pregunta 1 de 10</div>
+        <div class="streak" id="streak-box" title="Racha de aciertos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c.6 3.6 5 5.6 5 10.4a5 5 0 0 1-10 0c0-1.9.9-3.1 2-4 0 2 .9 3 2 3 0-3.600-1-5.700 1-9.400z"/></svg>
+          <div><span id="streak">0</span><span class="streak-label">racha</span></div>
+        </div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </header>
+
+    <article class="card">
+      <h2 id="question" tabindex="-1"></h2>
+      <div id="hint" class="hint" hidden></div>
+      <div id="options" class="options" role="group" aria-labelledby="question"></div>
+      <div id="feedback" class="feedback" hidden role="status" aria-live="polite">
+        <p id="fb-title" class="fb-title"></p>
+        <p id="fb-answer" class="fb-answer" hidden></p>
+        <p id="fb-text" class="fb-text"></p>
+        <button id="btn-next" class="btn wide" type="button">Siguiente</button>
+      </div>
+    </article>
+    <nav class="nav" aria-label="Moverse entre preguntas">
+      <button id="btn-prev" class="navbtn" type="button" aria-label="Pregunta anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button id="btn-hint" class="hintbtn" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21h6v-1.500H9V21zm3-19a7 7 0 0 0-4 12.700V17h8v-2.300A7 7 0 0 0 12 2z"/></svg><span id="hint-label">Pista</span></button>
+      <button id="btn-fwd" class="navbtn" type="button" aria-label="Pregunta siguiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    </nav>
+    <button id="btn-finish" class="finish" type="button">Finalizar y ver el video</button>
+  </section>
+
+  <!-- RESULTADO -->
+  <section id="screen-end" class="screen" hidden>
+    <div class="end">
+      <div id="newrec" class="newrec" hidden>¡Nuevo récord!</div>
+      <div class="ring">
+        <svg viewBox="0 0 140 140" aria-hidden="true">
+          <defs><linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f9e3a0"/><stop offset="1" stop-color="#d9a935"/></linearGradient></defs>
+          <circle class="bg" cx="70" cy="70" r="60"/>
+          <circle id="ring-fg" class="fg" cx="70" cy="70" r="60"/>
+        </svg>
+        <div class="num"><span id="final-score">0</span><small>de 100 puntos</small></div>
+      </div>
+      <div id="rank" class="rank"></div>
+      <p id="rank-msg" class="rank-msg"></p>
+      <div class="stats">
+        <div class="stat-box"><b id="st-correct">0</b><span>aciertos</span></div>
+        <div class="stat-box"><b id="st-streak">0</b><span>mejor racha</span></div>
+        <div class="stat-box"><b id="st-best">0</b><span>tu récord</span></div>
+      </div>
+      <button id="btn-again" class="btn wide" type="button">Volver a intentarlo</button>
+      <section class="video" id="video-section" aria-labelledby="video-title">
+        <h3 id="video-title">Video resumen del tema</h3>
+        <p class="video-sub">¿Quieres repasar? Mira este resumen del Imperio bizantino.</p>
+        <a class="btn video-btn" href="https://youtu.be/7X-CUa8cAB0" target="_blank" rel="noopener noreferrer">Ver el video en YouTube</a>
+      </section>
+    </div>
+  </section>
+
+</main>
+<div id="fx" aria-hidden="true"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /*Q_START*/
+  var QUESTIONS = [
+    { q: "¿Cómo se llamaba la capital del Imperio bizantino?",
+      o: ["Roma", "Atenas", "Constantinopla", "Alejandría"], c: 2,
+      h: "Hoy esa ciudad se llama Estambul.",
+      e: "Constantinopla era la gran capital: una ciudad rica, enorme y muy bien protegida. Hoy se llama Estambul." },
+    { q: "¿Qué emperador fundó Constantinopla?",
+      o: ["Justiniano", "Constantino I", "Heraclio", "Basilio II"], c: 1,
+      h: "El nombre de la ciudad viene del nombre de este emperador.",
+      e: "Constantino I eligió una ciudad antigua llamada Bizancio y la convirtió en su nueva capital. Por eso lleva su nombre: «la ciudad de Constantino»." },
+    { q: "¿En qué año se inauguró Constantinopla, fecha que muchos toman como el inicio del Imperio bizantino?",
+      o: ["Año 330", "Año 476", "Año 800", "Año 1054"], c: 0,
+      h: "Fue muy al principio de la historia del imperio, en el siglo IV.",
+      e: "En el año 330 Constantino inauguró Constantinopla. Muchos historiadores usan esa fecha como el comienzo, aunque la gente de la época seguía diciendo que era el Imperio romano." },
+    { q: "¿En qué año terminó el Imperio bizantino?",
+      o: ["Año 1066", "Año 1204", "Año 1453", "Año 1492"], c: 2,
+      h: "Cuando Colón llegó a América, este imperio ya había terminado.",
+      e: "Terminó en el año 1453, cuando los otomanos conquistaron Constantinopla. Con eso se acabó el imperio, después de más de mil años." },
+    { q: "¿Cómo se llamaban a sí mismos los habitantes del Imperio bizantino?",
+      o: ["Bizantinos", "Vikingos", "Persas", "Romanos"], c: 3,
+      h: "Se sentían herederos de una ciudad famosa de Italia.",
+      e: "Se llamaban «romanos» porque se sentían la continuación del Imperio romano. El nombre «bizantino» lo inventaron los historiadores siglos después." },
+    { q: "¿Qué idioma se hablaba principalmente en el Imperio bizantino?",
+      o: ["Latín", "Griego", "Árabe", "Persa"], c: 1,
+      h: "El imperio estaba en una región muy cercana a Grecia.",
+      e: "Con el tiempo, el griego se volvió el idioma del gobierno, de la Iglesia y de la vida diaria. El latín fue perdiendo importancia." },
+    { q: "¿Qué emperador mandó construir la gran iglesia de Santa Sofía?",
+      o: ["Alejo I", "Constantino XI", "Justiniano", "Heraclio"], c: 2,
+      h: "Este emperador también es famoso por ordenar las leyes romanas.",
+      e: "Justiniano la hizo construir para mostrar el poder y la fe del imperio. Es famosa por su enorme cúpula, que parece flotar." },
+    { q: "¿Qué era el «fuego griego»?",
+      o: ["Un baile típico", "Una comida picante", "Una señal con antorchas", "Un arma que ardía incluso sobre el agua"], c: 3,
+      h: "Se usaba en los barcos durante las batallas.",
+      e: "Era un líquido en llamas que lanzaban los barcos y era muy difícil de apagar. Ayudó a salvar a Constantinopla de varios ataques." },
+    { q: "¿Qué protegía a Constantinopla por el lado de tierra?",
+      o: ["Un desierto", "Las grandes murallas", "Una selva", "Un río enorme"], c: 1,
+      h: "Eran construcciones de piedra, hechas por las personas.",
+      e: "Eran varias capas de murallas altas con un foso al frente, casi imposibles de cruzar. Durante siglos frenaron a muchos enemigos." },
+    { q: "¿Qué pueblo conquistó Constantinopla y acabó con el imperio?",
+      o: ["Los otomanos", "Los vikingos", "Los romanos de Occidente", "Los persas"], c: 0,
+      h: "Su líder fue el sultán Mehmed II y su imperio nació en lo que hoy es Turquía.",
+      e: "Los otomanos, un imperio turco, tomaron la ciudad con ayuda de enormes cañones. Su líder, el sultán Mehmed II, la hizo su capital." }
+  ];
+  /*Q_END*/
+
+  var TOTAL = QUESTIONS.length;   // 10
+  var POINTS = 10;
+  var CIRC = 377;
+  var LETTERS = ['A', 'B', 'C', 'D'];
+  var state = null;
+
+  var reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  function $(id) { return document.getElementById(id); }
+  function reflow(node) { void node.offsetWidth; }
+
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ---------- Récord (opcional, nunca rompe el juego) ---------- */
+  function getBest() {
+    try {
+      var v = parseInt(localStorage.getItem('bizq_best'), 10);
+      return isNaN(v) ? null : v;
+    } catch (e) { return null; }
+  }
+  function setBest(v) { try { localStorage.setItem('bizq_best', String(v)); } catch (e) {} }
+  function renderBestStart() {
+    var b = getBest();
+    $('best-start').textContent = (b === null) ? '' : 'Tu récord: ' + b + ' puntos';
+  }
+
+  /* ---------- Pantallas ---------- */
+  function showScreen(name) {
+    ['start', 'quiz', 'end'].forEach(function (n) {
+      var s = $('screen-' + n);
+      if (n === name) {
+        s.hidden = false;
+        s.classList.remove('enter'); reflow(s); s.classList.add('enter');
+      } else {
+        s.hidden = true; s.classList.remove('enter');
+      }
+    });
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+
+  /* ---------- Números animados ---------- */
+  function countTo(node, to, dur) {
+    var from = parseInt(node.textContent, 10) || 0;
+    var token = (node._tk = (node._tk || 0) + 1);
+    if (reduce || from === to) { node.textContent = to; return; }
+    var t0 = performance.now();
+    function step(now) {
+      if (node._tk !== token) return;
+      var t = Math.min(1, (now - t0) / dur);
+      node.textContent = Math.round(from + (to - from) * t);
+      if (t < 1) requestAnimationFrame(step); else node.textContent = to;
+    }
+    requestAnimationFrame(step);
+  }
+  function setScore(target, animate) {
+    var node = $('score');
+    if (!animate) { node._tk = (node._tk || 0) + 1; node.textContent = target; return; }
+    countTo(node, target, 450);
+    node.classList.remove('bump'); reflow(node); node.classList.add('bump');
+  }
+  function setStreak(n, lost) {
+    $('streak').textContent = n;
+    var box = $('streak-box');
+    box.classList.toggle('on', n >= 1);
+    box.classList.toggle('hot', n >= 3);
+    box.classList.remove('bump', 'lost'); reflow(box);
+    if (lost) box.classList.add('lost'); else if (n > 0) box.classList.add('bump');
+  }
+
+  /* ---------- Efectos ---------- */
+  var SPARK_COLORS = ['#f9e3a0', '#e6b94d', '#3ecf8e', '#ffffff', '#ffa63d'];
+  function removeLater(node, ms) {
+    setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, ms);
+  }
+  function burst(x, y, n) {
+    if (reduce) return;
+    var fx = $('fx');
+    for (var i = 0; i < n; i++) {
+      var p = document.createElement('i');
+      p.className = 'spark';
+      var ang = Math.random() * Math.PI * 2, dist = 40 + Math.random() * 70;
+      p.style.left = x + 'px'; p.style.top = y + 'px';
+      p.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(1) + 'px');
+      p.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(1) + 'px');
+      p.style.background = SPARK_COLORS[i % SPARK_COLORS.length];
+      fx.appendChild(p); removeLater(p, 1000);
+    }
+  }
+  function confetti(n) {
+    if (reduce) return;
+    var fx = $('fx');
+    for (var i = 0; i < n; i++) {
+      var p = document.createElement('i');
+      p.className = 'confetti';
+      p.style.left = (Math.random() * 100) + 'vw';
+      p.style.background = SPARK_COLORS[i % SPARK_COLORS.length];
+      p.style.setProperty('--x', (Math.random() * 120 - 60).toFixed(0) + 'px');
+      p.style.setProperty('--r', (Math.random() * 720 - 360).toFixed(0) + 'deg');
+      p.style.animationDuration = (2.2 + Math.random() * 1.8).toFixed(2) + 's';
+      p.style.animationDelay = (Math.random() * 0.7).toFixed(2) + 's';
+      fx.appendChild(p); removeLater(p, 5200);
+    }
+  }
+  function plusPoints() {
+    var wrap = $('score-wrap');
+    var s = document.createElement('span');
+    s.className = 'plus'; s.textContent = '+' + POINTS;
+    wrap.appendChild(s); removeLater(s, 1100);
+  }
+  function vibrate(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+  /* ---------- Juego ---------- */
+  function buildQuestions() {
+    return QUESTIONS.map(function (q) {
+      var opts = shuffle(q.o.map(function (t, k) { return { t: t, ok: k === q.c }; }));
+      return { q: q.q, opts: opts, e: q.e, h: q.h, correctText: q.o[q.c] };
+    });
+  }
+
+  function answeredCount() {
+    var n = 0;
+    for (var i = 0; i < TOTAL; i++) if (state.answers[i]) n++;
+    return n;
+  }
+
+  var finishTimer = null;
+  var FINISH_LABEL = 'Finalizar y ver el video';
+  function resetFinishBtn() {
+    clearTimeout(finishTimer); finishTimer = null;
+    var b = $('btn-finish');
+    b.classList.remove('confirm'); b.textContent = FINISH_LABEL;
+  }
+  function requestFinish() {
+    if (!state || state.done) return;
+    var left = TOTAL - answeredCount();
+    var b = $('btn-finish');
+    if (left === 0 || b.classList.contains('confirm')) { resetFinishBtn(); finish(true); return; }
+    b.classList.add('confirm');
+    b.textContent = 'Te faltan ' + left + (left === 1 ? ' pregunta' : ' preguntas') + '. Toca de nuevo para finalizar';
+    clearTimeout(finishTimer);
+    finishTimer = setTimeout(resetFinishBtn, 4000);
+  }
+
+  function startGame() {
+    resetFinishBtn();
+    $('fx').innerHTML = '';
+    state = { list: buildQuestions(), i: 0, score: 0, streak: 0, bestStreak: 0, correct: 0, answers: [], hints: [], done: false };
+    setScore(0, false);
+    var box = $('streak-box'); box.classList.remove('on', 'hot', 'bump', 'lost');
+    $('streak').textContent = '0';
+    var pr = $('progress'); pr.innerHTML = '';
+    for (var i = 0; i < TOTAL; i++) {
+      (function (n) {
+        var sg = document.createElement('button');
+        sg.type = 'button'; sg.className = 'seg';
+        sg.setAttribute('aria-label', 'Ir a la pregunta ' + (n + 1));
+        sg.addEventListener('click', function () { go(n); });
+        pr.appendChild(sg);
+      })(i);
+    }
+    showScreen('quiz');
+    renderQuestion();
+  }
+
+  function updateProgress() {
+    var segs = $('progress').children;
+    for (var i = 0; i < segs.length; i++) {
+      var a = state.answers[i];
+      segs[i].className = 'seg' + (a ? (a.ok ? ' ok' : ' bad') : '') + (i === state.i ? ' cur' : '');
+    }
+  }
+
+  function updateNav() {
+    $('btn-prev').disabled = state.i === 0;
+    $('btn-fwd').disabled = state.i === TOTAL - 1;
+  }
+
+  function updateHint() {
+    var ans = state.answers[state.i];
+    var shown = !!state.hints[state.i] && !ans;
+    var hb = $('hint');
+    hb.hidden = !shown;
+    if (shown) hb.textContent = 'Pista: ' + state.list[state.i].h;
+    var b = $('btn-hint');
+    b.disabled = !!ans;
+    b.setAttribute('aria-expanded', shown ? 'true' : 'false');
+    $('hint-label').textContent = shown ? 'Ocultar pista' : 'Pista';
+  }
+
+  function toggleHint() {
+    if (!state || state.done || state.answers[state.i]) return;
+    state.hints[state.i] = !state.hints[state.i];
+    updateHint();
+  }
+
+  function go(idx) {
+    if (!state || state.done || idx < 0 || idx >= TOTAL || idx === state.i) return;
+    state.i = idx;
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    var item = state.list[state.i];
+    var ans = state.answers[state.i];
+    $('counter').textContent = 'Pregunta ' + (state.i + 1) + ' de ' + TOTAL;
+    $('question').textContent = item.q;
+    resetFinishBtn();
+    var box = $('options');
+    box.innerHTML = ''; box.classList.remove('locked');
+    item.opts.forEach(function (o, k) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'opt' + (ans ? ' restored' : '');
+      b.style.setProperty('--d', (k * 70) + 'ms');
+      b.innerHTML = '<span class="letter"></span><span class="otext"></span><span class="mark" aria-hidden="true"></span>';
+      b.firstChild.textContent = LETTERS[k];
+      b.children[1].textContent = o.t;
+      b.addEventListener('click', function () { choose(k); });
+      box.appendChild(b);
+    });
+    if (ans) paintResult(ans.k, false); else $('feedback').hidden = true;
+    updateHint(); updateNav(); updateProgress();
+    try { window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); } catch (e) {}
+    try { $('question').focus({ preventScroll: true }); } catch (e) {}
+  }
+
+  function paintResult(k, fresh) {
+    var item = state.list[state.i];
+    var ans = state.answers[state.i];
+    var picked = item.opts[k];
+    var box = $('options'), btns = box.children;
+    box.classList.add('locked');
+    var fb = $('feedback');
+    fb.className = 'feedback ' + (picked.ok ? 'good' : 'bad') + (fresh ? '' : ' still');
+    var title = $('fb-title'), a = $('fb-answer'), i;
+    if (picked.ok) {
+      btns[k].classList.add('correct');
+      title.textContent = '¡Estás en lo correcto!';
+      if (ans.streak >= 2) {
+        var chip = document.createElement('span');
+        chip.className = 'fb-streak'; chip.textContent = 'Racha de ' + ans.streak;
+        title.appendChild(chip);
+      }
+      a.hidden = true;
+    } else {
+      btns[k].classList.add('wrong');
+      for (i = 0; i < item.opts.length; i++) if (item.opts[i].ok) btns[i].classList.add('reveal');
+      title.textContent = '¡Ups! Pero tranquilo, te explico para que no te vuelva a pasar.';
+      a.textContent = 'La respuesta correcta es: ' + item.correctText;
+      a.hidden = false;
+    }
+    for (i = 0; i < btns.length; i++) {
+      var c = btns[i].classList;
+      if (!c.contains('correct') && !c.contains('wrong') && !c.contains('reveal')) c.add('dim');
+    }
+    $('fb-text').textContent = item.e;
+    $('btn-next').textContent = (answeredCount() >= TOTAL) ? 'Ver mi resultado' : 'Siguiente';
+    fb.hidden = false;
+  }
+
+  function choose(k) {
+    if (!state || state.done || state.answers[state.i]) return;
+    var item = state.list[state.i];
+    var picked = item.opts[k];
+    var hadStreak = state.streak > 0;
+
+    if (picked.ok) {
+      state.score += POINTS; state.streak++; state.correct++;
+      if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    } else {
+      state.streak = 0;
+    }
+    state.answers[state.i] = { k: k, ok: picked.ok, streak: state.streak };
+
+    paintResult(k, true);
+    var rect = $('options').children[k].getBoundingClientRect();
+    var cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+
+    if (picked.ok) {
+      setScore(state.score, true); plusPoints(); setStreak(state.streak, false);
+      burst(cx, cy, state.streak >= 3 ? 26 : 16);
+      vibrate(25);
+    } else {
+      setStreak(0, hadStreak);
+      vibrate([40, 40, 40]);
+    }
+    updateHint(); updateProgress();
+    try { $('btn-next').focus({ preventScroll: true }); } catch (e) {}
+    try { $('feedback').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' }); } catch (e) {}
+  }
+
+  function next() {
+    if (!state || state.done || !state.answers[state.i]) return;
+    if (answeredCount() >= TOTAL) { finish(); return; }
+    for (var d = 1; d <= TOTAL; d++) {
+      var idx = (state.i + d) % TOTAL;
+      if (!state.answers[idx]) { go(idx); return; }
+    }
+  }
+
+  var RANKS = [
+    { min: 100, name: 'Emperador del saber', msg: '¡Perfecto! Conoces Bizancio como un verdadero basileus.' },
+    { min: 80,  name: 'Estratega imperial', msg: '¡Excelente! Casi nada se te escapó.' },
+    { min: 60,  name: 'Escriba de la corte', msg: '¡Muy bien! Ya sabes bastante. Con otra partida llegas más lejos.' },
+    { min: 40,  name: 'Guardia varego', msg: '¡Buen comienzo! Lee de nuevo las explicaciones y vuelve a intentarlo.' },
+    { min: 0,   name: 'Aprendiz de Constantinopla', msg: 'No pasa nada, lo importante es aprender. ¡Inténtalo otra vez!' }
+  ];
+
+  function finish(toVideo) {
+    resetFinishBtn();
+    state.done = true;
+    var prev = getBest();
+    var isRecord = state.score > 0 && (prev === null || state.score > prev);
+    if (isRecord) setBest(state.score);
+    var best = isRecord ? state.score : (prev === null ? state.score : prev);
+
+    var rank = RANKS[RANKS.length - 1];
+    for (var i = 0; i < RANKS.length; i++) { if (state.score >= RANKS[i].min) { rank = RANKS[i]; break; } }
+
+    $('rank').textContent = rank.name;
+    $('rank-msg').textContent = rank.msg;
+    $('st-correct').textContent = state.correct + '/' + TOTAL;
+    $('st-streak').textContent = state.bestStreak;
+    $('st-best').textContent = best;
+    $('newrec').hidden = !isRecord;
+    $('final-score').textContent = '0'; $('final-score')._tk = (($('final-score')._tk) || 0) + 1;
+
+    var ring = $('ring-fg');
+    ring.style.transition = 'none';
+    ring.style.strokeDashoffset = CIRC;
+    showScreen('end');
+    reflow(ring);
+    ring.style.transition = '';
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        ring.style.strokeDashoffset = (CIRC * (1 - state.score / 100)).toFixed(2);
+        countTo($('final-score'), state.score, 1200);
+      });
+    });
+    if (state.score >= 70) confetti(state.score === 100 ? 90 : 50);
+    try { $('btn-again').focus({ preventScroll: true }); } catch (e) {}
+    if (toVideo === true) {
+      setTimeout(function () {
+        if (!state || !state.done) return;
+        try { $('video-section').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); } catch (e) {}
+      }, 350);
+    }
+  }
+
+  /* ---------- Eventos ---------- */
+  $('btn-start').addEventListener('click', startGame);
+  $('btn-again').addEventListener('click', startGame);
+  $('btn-finish').addEventListener('click', requestFinish);
+  $('btn-next').addEventListener('click', next);
+  $('btn-prev').addEventListener('click', function () { if (state) go(state.i - 1); });
+  $('btn-fwd').addEventListener('click', function () { if (state) go(state.i + 1); });
+  $('btn-hint').addEventListener('click', toggleHint);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!state || state.done || $('screen-quiz').hidden) return;
+    if (e.key === 'ArrowLeft') { go(state.i - 1); return; }
+    if (e.key === 'ArrowRight') { go(state.i + 1); return; }
+    if (state.answers[state.i] || !e.key || e.key.length !== 1) return;
+    var key = e.key.toLowerCase();
+    var idx = '1234'.indexOf(key);
+    if (idx < 0) idx = 'abcd'.indexOf(key);
+    if (idx >= 0 && idx < state.list[state.i].opts.length) choose(idx);
+  });
+
+  renderBestStart();
+})();
+</script>
+</body>
+</html>
+
