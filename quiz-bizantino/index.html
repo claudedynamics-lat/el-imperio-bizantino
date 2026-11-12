@@ -44,6 +44,8 @@ h1{
 .chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:26px}
 .chip{padding:8px 14px; border-radius:999px; border:1px solid rgba(230,185,77,.35); background:rgba(255,255,255,.05); font-size:.92rem}
 .record{margin-top:16px; color:var(--gold2); font-size:.95rem; min-height:1.3em}
+.reset-record{margin-top:8px; padding:8px 12px; border:0; border-radius:8px; background:transparent; color:var(--muted); font:inherit; font-size:.88rem; text-decoration:underline; cursor:pointer}
+.reset-record:focus-visible{outline:3px solid #fff; outline-offset:3px}
 
 .btn{
   font:inherit; font-weight:700; font-size:1.05rem; border:0; cursor:pointer; border-radius:999px;
@@ -219,7 +221,9 @@ h1{
         <span class="chip">Sin tiempo límite</span>
       </div>
       <button id="btn-start" class="btn wide" type="button">Comenzar</button>
+      <p class="device-note">Cada partida empieza desde cero. El récord se guarda solo en este dispositivo.</p>
       <div id="best-start" class="record"></div>
+      <button id="btn-reset-record" class="reset-record" type="button" hidden>Borrar récord de este dispositivo</button>
     </div>
   </section>
 
@@ -370,6 +374,12 @@ h1{
   function renderBestStart() {
     var b = getBest();
     $('best-start').textContent = (b === null) ? '' : 'Tu récord: ' + b + ' puntos';
+    $('btn-reset-record').hidden = (b === null);
+  }
+  function resetBest() {
+    if (!window.confirm('¿Borrar el récord guardado en este dispositivo? Esta acción no se puede deshacer.')) return;
+    try { localStorage.removeItem('bizq_best'); } catch (e) {}
+    renderBestStart();
   }
 
   /* ---------- Pantallas ---------- */
@@ -696,6 +706,7 @@ h1{
 
   /* ---------- Eventos ---------- */
   $('btn-start').addEventListener('click', startGame);
+  $('btn-reset-record').addEventListener('click', resetBest);
   $('btn-again').addEventListener('click', startGame);
   $('btn-finish').addEventListener('click', requestFinish);
   $('btn-next').addEventListener('click', next);
